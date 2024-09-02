@@ -50,3 +50,22 @@ func (uc UseCase) CreateToken(u domain.User) (string, error) {
 
 	return signedToken, nil
 }
+
+func (uc UseCase) ValidateToken(tokenString string) (bool, error) {
+	claims := domain.JWTCustomClaims{}
+
+	token, err := jwt.ParseWithClaims(tokenString, &claims, uc.getJWTSecret)
+	if err != nil {
+		return false, err
+	}
+
+	if !token.Valid {
+		return false, err
+	}
+
+	return true, nil
+}
+
+func (uc UseCase) getJWTSecret(token *jwt.Token) (any, error) {
+	return []byte(os.Getenv("JWT_SECRET")), nil
+}

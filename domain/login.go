@@ -19,3 +19,12 @@ type JWTCustomClaims struct {
 	Email string    `json:"email"`
 	jwt.RegisteredClaims
 }
+
+type ValidateJWTRequest struct {
+	Token string `json:"token"`
+}
+
+type ValidateJWTResponse struct {
+	IsValid bool   `json:"is_valid"`
+	Message string `json:"message"`
+}

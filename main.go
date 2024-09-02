@@ -24,6 +24,7 @@ func main() {
 
 	EDrouter := http.ServeMux{}
 	EDrouter.HandleFunc("POST /v1/login", loginHandler.Login)
+	EDrouter.HandleFunc("POST /v1/login/validate-jwt", loginHandler.ValidateJWT)
 
 	// Serve and listen
 	log.Printf("Server running on port 8080")
