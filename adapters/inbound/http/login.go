@@ -7,14 +7,14 @@ import (
 	"net/http"
 
 	"gitlab.com/EDteam/workshop-ai-2024/admin/domain"
-	"gitlab.com/EDteam/workshop-ai-2024/admin/ports/login"
+	"gitlab.com/EDteam/workshop-ai-2024/admin/ports"
 )
 
 type LoginHandler struct {
-	loginUseCase login.PortUseCase
+	loginUseCase ports.LoginUseCase
 }
 
-func NewLoginHandler(loginUseCase login.PortUseCase) LoginHandler {
+func NewLoginHandler(loginUseCase ports.LoginUseCase) LoginHandler {
 	return LoginHandler{loginUseCase: loginUseCase}
 }
 

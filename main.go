@@ -20,15 +20,11 @@ func main() {
 	// Migration
 	db.RunMigration()
 
-	loginHandler := di.InitLogin()
-
-	EDrouter := http.ServeMux{}
-	EDrouter.HandleFunc("POST /v1/login", loginHandler.Login)
-	EDrouter.HandleFunc("POST /v1/login/validate-jwt", loginHandler.ValidateJWT)
+	router := di.Router()
 
 	// Serve and listen
 	log.Printf("Server running on port 8080")
-	err = http.ListenAndServe(":8080", &EDrouter)
+	err = http.ListenAndServe(":8080", router)
 	if err != nil {
 		panic(err)
 	}

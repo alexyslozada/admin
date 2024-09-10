@@ -3,6 +3,7 @@ package di
 import (
 	"gitlab.com/EDteam/workshop-ai-2024/admin/adapters/outbound/repository"
 	"gitlab.com/EDteam/workshop-ai-2024/admin/application/user"
+	"gitlab.com/EDteam/workshop-ai-2024/admin/domain"
 	"gitlab.com/EDteam/workshop-ai-2024/admin/infrastructure/db"
 	"gitlab.com/EDteam/workshop-ai-2024/admin/internal/timer"
 )
@@ -13,6 +14,6 @@ func InitUserUseCase() user.UseCase {
 		panic(err)
 	}
 
-	repo := repository.NewUser(dbGlobal)
+	repo := repository.NewGorm[domain.User](dbGlobal)
 	return user.New(repo, timer.NewRealTimer())
 }

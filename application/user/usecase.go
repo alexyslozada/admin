@@ -44,6 +44,18 @@ func (uc UseCase) Update(user *domain.User) error {
 	return uc.repo.Update(user)
 }
 
+func (uc UseCase) Delete(ID uuid.UUID) error {
+	return uc.repo.Delete(ID)
+}
+
+func (uc UseCase) FindAll() ([]domain.User, error) {
+	return uc.repo.FindAll()
+}
+
+func (uc UseCase) FindOneByConditions(u *domain.User) (domain.User, error) {
+	return uc.repo.FindOneByConditions(u)
+}
+
 func (uc UseCase) Login(email, password string) (domain.User, error) {
 	u := domain.User{Email: email}
 	u, err := uc.repo.FindOneByConditions(&u)

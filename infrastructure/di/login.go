@@ -7,6 +7,9 @@ import (
 )
 
 func InitLogin() http.LoginHandler {
-	loginUseCase := login.NewUseCase(InitUserUseCase(), timer.NewRealTimer())
-	return http.NewLoginHandler(loginUseCase)
+	return http.NewLoginHandler(InitLoginUseCase())
+}
+
+func InitLoginUseCase() login.UseCase {
+	return login.NewUseCase(InitUserUseCase(), timer.NewRealTimer())
 }

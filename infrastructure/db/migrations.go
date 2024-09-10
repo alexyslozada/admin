@@ -1,6 +1,10 @@
 package db
 
-import "gitlab.com/EDteam/workshop-ai-2024/admin/domain"
+import (
+	"gorm.io/gorm/clause"
+
+	"gitlab.com/EDteam/workshop-ai-2024/admin/domain"
+)
 
 func RunMigration() {
 	db, err := NewGorm()
@@ -19,7 +23,19 @@ func RunMigration() {
 		Email:    "admin@ed.team",
 		Password: "$2a$12$W.oQN6MlDwpkQt.v1hmgmeMDAHwhrbFJVituXFgWoIt5tSmj8eGEG",
 	}
-	err = db.Create(&user).Error
+	err = db.Clauses(clause.OnConflict{DoNothing: true}).Create(&user).Error
+	if err != nil {
+		panic(err)
+	}
+
+	// Clients table
+	err = db.AutoMigrate(&domain.Client{})
+	if err != nil {
+		panic(err)
+	}
+
+	// Sales table
+	err = db.AutoMigrate(&domain.Sale{})
 	if err != nil {
 		panic(err)
 	}

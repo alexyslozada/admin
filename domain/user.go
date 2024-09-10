@@ -4,7 +4,7 @@ import "github.com/google/uuid"
 
 type User struct {
 	ID        uuid.UUID `gorm:"type:uuid;primary_key;default:gen_random_uuid()"`
-	Email     string    `gorm:"type:varchar(100);unique_index"`
+	Email     string    `gorm:"type:varchar(100);unique"`
 	Password  string    `gorm:"type:varchar(100)"`
 	Name      string    `gorm:"type:varchar(100);unique_index"`
 	CreatedAt int64     `gorm:"type:bigint"`

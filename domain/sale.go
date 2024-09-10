@@ -1,0 +1,26 @@
+package domain
+
+import "github.com/google/uuid"
+
+const (
+	ProductSubscription = "subscription"
+	ProductCourse       = "course"
+)
+
+type Sale struct {
+	ID             uuid.UUID `json:"id" gorm:"type:uuid;primary_key;default:gen_random_uuid()"`
+	Product        string    `json:"product"`
+	ClientID       uuid.UUID `json:"client_id"`
+	Client         Client    `json:"client" gorm:"foreignKey:ClientID;references:ID"`
+	DateInvoice    int64     `json:"date_invoice"`
+	Amount         float64   `json:"amount"`
+	IsSubscription bool      `json:"is_subscription"`
+	Months         uint8     `json:"months"`
+	CreatedAt      int64     `json:"created_at"`
+	UpdatedAt      int64     `json:"updated_at"`
+	DeletedAt      int64     `json:"deleted_at"`
+}
+
+func (Sale) TableName() string {
+	return "sales"
+}

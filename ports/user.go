@@ -1,9 +1,8 @@
-package user
+package ports
 
 import "gitlab.com/EDteam/workshop-ai-2024/admin/domain"
 
-type PortUseCase interface {
-	Create(user *domain.User) error
-	Update(user *domain.User) error
+type UserUseCase interface {
+	GenericUseCase[domain.User]
 	Login(email, password string) (domain.User, error)
 }

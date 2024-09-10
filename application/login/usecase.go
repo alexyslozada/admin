@@ -8,15 +8,15 @@ import (
 
 	"gitlab.com/EDteam/workshop-ai-2024/admin/domain"
 	EDtimer "gitlab.com/EDteam/workshop-ai-2024/admin/internal/timer"
-	portUser "gitlab.com/EDteam/workshop-ai-2024/admin/ports/user"
+	portUser "gitlab.com/EDteam/workshop-ai-2024/admin/ports"
 )
 
 type UseCase struct {
-	userUseCase portUser.PortUseCase
+	userUseCase portUser.UserUseCase
 	timer       EDtimer.Timer
 }
 
-func NewUseCase(userUseCase portUser.PortUseCase, timer EDtimer.Timer) UseCase {
+func NewUseCase(userUseCase portUser.UserUseCase, timer EDtimer.Timer) UseCase {
 	return UseCase{
 		userUseCase: userUseCase,
 		timer:       timer,
@@ -66,6 +66,6 @@ func (uc UseCase) ValidateToken(tokenString string) (bool, error) {
 	return true, nil
 }
 
-func (uc UseCase) getJWTSecret(token *jwt.Token) (any, error) {
+func (uc UseCase) getJWTSecret(_ *jwt.Token) (any, error) {
 	return []byte(os.Getenv("JWT_SECRET")), nil
 }
