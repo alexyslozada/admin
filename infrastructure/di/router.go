@@ -1,6 +1,7 @@
 package di
 
 import (
+	"log"
 	"os"
 	"strings"
 
@@ -21,6 +22,8 @@ func Router() *EDhttp.EDmux {
 	for _, domain := range allowedDomainsList {
 		allowedDomainsUnique[domain] = struct{}{}
 	}
+
+	log.Printf("Allowed domains: %v", allowedDomainsList)
 
 	EDrouter := EDhttp.NewEDmux(allowedDomainsUnique)
 	EDrouter.HandleFunc("POST /v1/login", loginHandler.Login)
