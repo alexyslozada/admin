@@ -1,15 +1,28 @@
 package di
 
-import "net/http"
+import (
+	"os"
+	"strings"
 
-func Router() *http.ServeMux {
+	EDhttp "gitlab.com/EDteam/workshop-ai-2024/admin/adapters/inbound/http"
+)
+
+func Router() *EDhttp.EDmux {
 
 	loginHandler := InitLogin()
 	clientHandler := InitClientHandler()
 	saleHandler := InitSaleHandler()
 	middleware := InitMiddleware()
 
-	EDrouter := http.ServeMux{}
+	// CORS
+	allowedDomains := os.Getenv("ALLOWED_DOMAINS")
+	allowedDomainsList := strings.Split(allowedDomains, ",")
+	allowedDomainsUnique := make(map[string]struct{}, len(allowedDomainsList))
+	for _, domain := range allowedDomainsList {
+		allowedDomainsUnique[domain] = struct{}{}
+	}
+
+	EDrouter := EDhttp.NewEDmux(allowedDomainsUnique)
 	EDrouter.HandleFunc("POST /v1/login", loginHandler.Login)
 	EDrouter.HandleFunc("POST /v1/login/validate-jwt", loginHandler.ValidateJWT)
 	EDrouter.HandleFunc("POST /v1/clients", middleware.Auth(clientHandler.Create))
