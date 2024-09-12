@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"gitlab.com/EDteam/workshop-ai-2024/admin/domain"
+	"gitlab.com/EDteam/workshop-ai-2024/admin/internal/urler"
 	"gitlab.com/EDteam/workshop-ai-2024/admin/ports"
 )
 
@@ -58,8 +59,11 @@ func (ch ClientHandler) Create(w http.ResponseWriter, r *http.Request) {
 }
 
 func (ch ClientHandler) FindAll(w http.ResponseWriter, r *http.Request) {
+	// Get filters
+	filters := urler.ParseQueryParams(r.URL.Query())
+
 	// Call use case
-	clients, err := ch.useCase.FindAll()
+	clients, err := ch.useCase.FindAll(filters)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return

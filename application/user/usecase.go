@@ -9,6 +9,7 @@ import (
 
 	"gitlab.com/EDteam/workshop-ai-2024/admin/domain"
 	EDtimer "gitlab.com/EDteam/workshop-ai-2024/admin/internal/timer"
+	"gitlab.com/EDteam/workshop-ai-2024/admin/internal/urler"
 	"gitlab.com/EDteam/workshop-ai-2024/admin/ports"
 )
 
@@ -48,8 +49,8 @@ func (uc UseCase) Delete(ID uuid.UUID) error {
 	return uc.repo.Delete(ID)
 }
 
-func (uc UseCase) FindAll() ([]domain.User, error) {
-	return uc.repo.FindAll()
+func (uc UseCase) FindAll(filters []urler.Filter) ([]domain.User, error) {
+	return uc.repo.FindAll(filters)
 }
 
 func (uc UseCase) FindOneByConditions(u *domain.User) (domain.User, error) {
