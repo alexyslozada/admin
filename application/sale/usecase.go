@@ -52,7 +52,7 @@ func (uc UseCase) FindAll(filters []urler.Filter) ([]domain.Sale, error) {
 		}
 
 		if strings.EqualFold(filter.Field, "from") {
-			filters[i].Field = "created_at"
+			filters[i].Field = "date_invoice"
 			filters[i].Operator = urler.GreaterThanOrEqual
 			from, err := time.Parse(time.DateOnly, filter.Value)
 			if err != nil {
@@ -63,7 +63,7 @@ func (uc UseCase) FindAll(filters []urler.Filter) ([]domain.Sale, error) {
 		}
 
 		if strings.EqualFold(filter.Field, "to") {
-			filters[i].Field = "created_at"
+			filters[i].Field = "date_invoice"
 			filters[i].Operator = urler.LessThanOrEqual
 			to, err := time.Parse(time.DateOnly, filter.Value)
 			if err != nil {
