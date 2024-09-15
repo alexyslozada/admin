@@ -18,9 +18,7 @@ func NewMiddleware(loginUseCase ports.LoginUseCase) Middleware {
 func (m Middleware) Auth(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		token := r.Header.Get("Authorization")
-		if strings.HasPrefix(token, "Bearer ") {
-			token = strings.TrimPrefix(token, "Bearer ")
-		}
+		token = strings.TrimPrefix(token, "Bearer ")
 		if token == "" {
 			http.Error(w, "Token is required", http.StatusUnauthorized)
 			return
