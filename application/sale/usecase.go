@@ -1,6 +1,7 @@
 package sale
 
 import (
+	"log"
 	"strconv"
 	"strings"
 	"time"
@@ -44,6 +45,7 @@ func (uc UseCase) Delete(ID uuid.UUID) error {
 }
 
 func (uc UseCase) FindAll(filters []urler.Filter) ([]domain.Sale, error) {
+	log.Printf("filters: %+v", filters)
 	// Parse filters to the real business logic
 	for i, filter := range filters {
 		if strings.EqualFold(filter.Field, "kind") {

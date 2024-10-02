@@ -5,6 +5,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"time"
 
 	"gitlab.com/EDteam/workshop-ai-2024/admin/domain"
 	"gitlab.com/EDteam/workshop-ai-2024/admin/internal/urler"
@@ -58,19 +59,37 @@ func (h SaleHandler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s SaleHandler) FindAll(w http.ResponseWriter, r *http.Request) {
+func (h SaleHandler) FindAll(w http.ResponseWriter, r *http.Request) {
 	// Get filters
 	filters := urler.ParseQueryParams(r.URL.Query())
 
 	// Call use case
-	sales, err := s.useCase.FindAll(filters)
+	sales, err := h.useCase.FindAll(filters)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
+	salesDTO := make([]domain.SaleResponse, 0, len(sales))
+	for _, sale := range sales {
+		salesDTO = append(salesDTO, domain.SaleResponse{
+			ID:             sale.ID,
+			Product:        sale.Product,
+			ClientID:       sale.ClientID,
+			Client:         sale.Client,
+			DateInvoice:    time.Unix(sale.DateInvoice, 0),
+			Amount:         sale.Amount,
+			IsSubscription: sale.IsSubscription,
+			Months:         sale.Months,
+			CreatedAt:      time.Unix(sale.CreatedAt, 0),
+			UpdatedAt:      time.Unix(sale.UpdatedAt, 0),
+			DeletedAt:      time.Unix(sale.DeletedAt, 0),
+		})
+	}
+
+	time.Now().Unix()
 	// Marshal response
-	response, err := json.Marshal(sales)
+	response, err := json.Marshal(salesDTO)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

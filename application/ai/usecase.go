@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -122,7 +123,24 @@ func (uc *UseCase) performAction(ctx context.Context, run domain.Run) (string, e
 			return "", err
 		}
 
-		raw, err := json.Marshal(sales)
+		salesDTO := make([]domain.SaleResponse, 0, len(sales))
+		for _, sale := range sales {
+			salesDTO = append(salesDTO, domain.SaleResponse{
+				ID:             sale.ID,
+				Product:        sale.Product,
+				ClientID:       sale.ClientID,
+				Client:         sale.Client,
+				DateInvoice:    time.Unix(sale.DateInvoice, 0),
+				Amount:         sale.Amount,
+				IsSubscription: sale.IsSubscription,
+				Months:         sale.Months,
+				CreatedAt:      time.Unix(sale.CreatedAt, 0),
+				UpdatedAt:      time.Unix(sale.UpdatedAt, 0),
+				DeletedAt:      time.Unix(sale.DeletedAt, 0),
+			})
+		}
+
+		raw, err := json.Marshal(salesDTO)
 		if err != nil {
 			return "", err
 		}
