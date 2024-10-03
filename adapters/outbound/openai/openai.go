@@ -144,6 +144,7 @@ func (o OpenAI) SubmitToolOutput(ctx context.Context, runners []domain.Run) (str
 
 	for stream.Next() {
 		streamEvent := stream.Current()
+		log.Printf("SubmitToolOutput() streamEvent: %+v", streamEvent.Event)
 		if streamEvent.Event == openai.AssistantStreamEventEventThreadRunCompleted {
 			break
 		}
