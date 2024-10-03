@@ -164,6 +164,9 @@ func (o OpenAI) SubmitToolOutput(ctx context.Context, runners []domain.Run) (str
 			return messageResponse.String(), nil
 		}
 	}
+	if err := stream.Err(); err != nil {
+		return err.Error(), err
+	}
 
 	return "SubmitToolOutput finish. Data not found", nil
 }
