@@ -11,7 +11,7 @@
 *.dll
 *.so
 *.dylib
-app
+./app
 
 # Environment
 *.env
@@ -41,7 +41,7 @@ cmake-build-*/
 *.iws
 
 # IntelliJ
-out/
+./out/
 
 # mpeltonen/sbt-idea plugin
 .idea_modules/
