@@ -1,6 +1,7 @@
 package openai
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -143,15 +144,24 @@ func (o OpenAI) SubmitToolOutput(ctx context.Context, runners []domain.Run) (str
 
 	for stream.Next() {
 		streamEvent := stream.Current()
+		if streamEvent.Event == openai.AssistantStreamEventEventThreadRunCompleted {
+			break
+		}
 		if streamEvent.Event == openai.AssistantStreamEventEventThreadMessageCompleted {
 			message, ok := streamEvent.Data.(openai.Message)
 			if !ok {
 				return "", fmt.Errorf("could not convert streamEvent.Data to openai.Message, type is: %T", streamEvent.Data)
 			}
 
-			return message.Content[0].Text.Value, nil
+			var messageResponse bytes.Buffer
+			for _, content := range message.Content {
+				messageResponse.WriteString(content.Text.Value)
+				messageResponse.WriteString("\n")
+			}
+
+			return messageResponse.String(), nil
 		}
 	}
 
-	return "Data not found", nil
+	return "SubmitToolOutput finish. Data not found", nil
 }
