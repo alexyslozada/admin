@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/google/uuid"
@@ -52,6 +53,7 @@ func (uc *UseCase) CreateThread(ctx context.Context) (uuid.UUID, error) {
 // CreateMessage retrieves the OpenAI thread ID associated with the provided UUID, creates a new message
 // using the OpenAI interface, runs the thread, and returns the response.
 func (uc *UseCase) CreateMessage(ctx context.Context, threadID uuid.UUID, content string) (string, error) {
+	log.Printf("CreateMessage: threadID=%s, content=%s", threadID, content)
 	realThreadID, ok := uc.threads[threadID]
 	if !ok {
 		return "", domain.ErrThreadNotFound

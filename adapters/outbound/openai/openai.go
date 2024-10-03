@@ -53,6 +53,7 @@ func (o OpenAI) CreateMessage(ctx context.Context, threadID, content string) (st
 }
 
 func (o OpenAI) RunThread(ctx context.Context, threadID string) (domain.AIRunKind, []domain.Run, error) {
+	log.Printf("RunThread() threadID: %s", threadID)
 	stream := o.client.Beta.Threads.Runs.NewStreaming(
 		ctx,
 		threadID,
@@ -68,6 +69,7 @@ func (o OpenAI) RunThread(ctx context.Context, threadID string) (domain.AIRunKin
 		}
 
 		if streamEvent.Event == openai.AssistantStreamEventEventThreadMessageCompleted {
+			log.Printf("RunThread() threadID: %s, Message completed", threadID)
 			message, ok := streamEvent.Data.(openai.Message)
 			if !ok {
 				return domain.AIRunKindResponse, nil, fmt.Errorf("could not convert streamEvent.Data to openai.Message, type is: %T", streamEvent.Data)
@@ -82,6 +84,7 @@ func (o OpenAI) RunThread(ctx context.Context, threadID string) (domain.AIRunKin
 		}
 
 		if streamEvent.Event == openai.AssistantStreamEventEventThreadRunRequiresAction {
+			log.Printf("RunThread() threadID: %s, Required action", threadID)
 			run, ok := streamEvent.Data.(openai.Run)
 			if !ok {
 				return domain.AIRunKindRequiredAction, nil, fmt.Errorf("could not convert streamEvent.Data to openai.Run, type is: %T", streamEvent.Data)
@@ -89,6 +92,7 @@ func (o OpenAI) RunThread(ctx context.Context, threadID string) (domain.AIRunKin
 
 			runners := make([]domain.Run, 0, len(run.RequiredAction.SubmitToolOutputs.ToolCalls))
 			for _, toolCall := range run.RequiredAction.SubmitToolOutputs.ToolCalls {
+				log.Printf("RunThread() toolCall: %+v", toolCall)
 				function := toolCall.Function
 
 				var args map[string]any
@@ -116,6 +120,7 @@ func (o OpenAI) RunThread(ctx context.Context, threadID string) (domain.AIRunKin
 		return domain.AIRunKindRunCompleted, nil, err
 	}
 
+	log.Printf("RunThread() threadID: %s, Run completed, but not data", threadID)
 	return domain.AIRunKindRunCompleted, nil, nil
 }
 
