@@ -135,6 +135,7 @@ func (o OpenAI) SubmitToolOutput(ctx context.Context, runners []domain.Run) (str
 			ToolCallID: openai.F(runner.FunctionCall.CallID),
 		})
 	}
+	log.Printf("SubmitToolOutput() outputParams: %+v", outputParams)
 	stream := o.client.Beta.Threads.Runs.SubmitToolOutputsStreaming(
 		ctx,
 		threadID,
