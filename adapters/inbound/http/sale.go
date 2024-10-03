@@ -9,14 +9,14 @@ import (
 
 	"gitlab.com/EDteam/workshop-ai-2024/admin/domain"
 	"gitlab.com/EDteam/workshop-ai-2024/admin/internal/urler"
-	"gitlab.com/EDteam/workshop-ai-2024/admin/ports"
+	"gitlab.com/EDteam/workshop-ai-2024/admin/ports/app"
 )
 
 type SaleHandler struct {
-	useCase ports.GenericUseCase[domain.Sale]
+	useCase app.GenericUseCase[domain.Sale]
 }
 
-func NewSaleHandler(useCase ports.GenericUseCase[domain.Sale]) SaleHandler {
+func NewSaleHandler(useCase app.GenericUseCase[domain.Sale]) SaleHandler {
 	return SaleHandler{useCase: useCase}
 }
 

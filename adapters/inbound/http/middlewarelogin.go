@@ -4,14 +4,14 @@ import (
 	"net/http"
 	"strings"
 
-	"gitlab.com/EDteam/workshop-ai-2024/admin/ports"
+	"gitlab.com/EDteam/workshop-ai-2024/admin/ports/app"
 )
 
 type Middleware struct {
-	loginUseCase ports.LoginUseCase
+	loginUseCase app.LoginUseCase
 }
 
-func NewMiddleware(loginUseCase ports.LoginUseCase) Middleware {
+func NewMiddleware(loginUseCase app.LoginUseCase) Middleware {
 	return Middleware{loginUseCase: loginUseCase}
 }
 

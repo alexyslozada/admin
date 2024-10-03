@@ -11,15 +11,15 @@ import (
 	"gitlab.com/EDteam/workshop-ai-2024/admin/domain"
 	EDtimer "gitlab.com/EDteam/workshop-ai-2024/admin/internal/timer"
 	"gitlab.com/EDteam/workshop-ai-2024/admin/internal/urler"
-	"gitlab.com/EDteam/workshop-ai-2024/admin/ports"
+	"gitlab.com/EDteam/workshop-ai-2024/admin/ports/out"
 )
 
 type UseCase struct {
-	repo  ports.Repository[domain.Sale]
+	repo  out.Repository[domain.Sale]
 	timer EDtimer.Timer
 }
 
-func NewUseCase(repo ports.Repository[domain.Sale], timer EDtimer.Timer) UseCase {
+func NewUseCase(repo out.Repository[domain.Sale], timer EDtimer.Timer) UseCase {
 	return UseCase{repo: repo, timer: timer}
 }
 

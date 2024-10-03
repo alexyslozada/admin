@@ -8,14 +8,14 @@ import (
 
 	"gitlab.com/EDteam/workshop-ai-2024/admin/domain"
 	"gitlab.com/EDteam/workshop-ai-2024/admin/internal/urler"
-	"gitlab.com/EDteam/workshop-ai-2024/admin/ports"
+	"gitlab.com/EDteam/workshop-ai-2024/admin/ports/app"
 )
 
 type ClientHandler struct {
-	useCase ports.GenericUseCase[domain.Client]
+	useCase app.GenericUseCase[domain.Client]
 }
 
-func NewClientHandler(useCase ports.GenericUseCase[domain.Client]) ClientHandler {
+func NewClientHandler(useCase app.GenericUseCase[domain.Client]) ClientHandler {
 	return ClientHandler{useCase: useCase}
 }
 

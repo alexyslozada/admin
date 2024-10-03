@@ -1,6 +1,7 @@
 package ai
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -10,16 +11,16 @@ import (
 
 	"gitlab.com/EDteam/workshop-ai-2024/admin/domain"
 	"gitlab.com/EDteam/workshop-ai-2024/admin/internal/urler"
-	"gitlab.com/EDteam/workshop-ai-2024/admin/ports"
+	"gitlab.com/EDteam/workshop-ai-2024/admin/ports/app"
 )
 
 type UseCase struct {
-	openAI       ports.OpenAI
+	openAI       app.OpenAI
 	threads      map[uuid.UUID]string
-	salesUseCase ports.GenericUseCase[domain.Sale]
+	salesUseCase app.GenericUseCase[domain.Sale]
 }
 
-func NewUseCase(openAI ports.OpenAI, sales ports.GenericUseCase[domain.Sale]) UseCase {
+func NewUseCase(openAI app.OpenAI, sales app.GenericUseCase[domain.Sale]) UseCase {
 	return UseCase{
 		openAI:       openAI,
 		threads:      make(map[uuid.UUID]string),
@@ -61,19 +62,31 @@ func (uc *UseCase) CreateMessage(ctx context.Context, threadID uuid.UUID, conten
 		return "", err
 	}
 
-	response, err := uc.openAI.RunThread(ctx, realThreadID)
+	event, runners, err := uc.openAI.RunThread(ctx, realThreadID)
 	if err != nil {
 		return "", err
 	}
 
-	if response.Kind == domain.AIRunKindRequiredAction {
-		// Perform required action
-		actionResponse, err := uc.performAction(ctx, response)
-		if err != nil {
-			return "", err
+	var responseCompleted bytes.Buffer
+	for i, runner := range runners {
+		if event == domain.AIRunKindRequiredAction {
+			// Perform required action
+			actionResponse, err := uc.performAction(ctx, runner)
+			if err != nil {
+				return "", err
+			}
+
+			runners[i].Response = actionResponse
+			continue
 		}
 
-		toolResponse, err := uc.openAI.SubmitToolOutput(ctx, realThreadID, response.FunctionCall.RunID, response.FunctionCall.CallID, actionResponse)
+		// If event is not AIRunKindRequiredAction, set the response
+		responseCompleted.WriteString(runner.Response)
+		responseCompleted.WriteString("\n")
+	}
+
+	if event == domain.AIRunKindRequiredAction {
+		toolResponse, err := uc.openAI.SubmitToolOutput(ctx, runners)
 		if err != nil {
 			return "", err
 		}
@@ -81,8 +94,8 @@ func (uc *UseCase) CreateMessage(ctx context.Context, threadID uuid.UUID, conten
 		return toolResponse, nil
 	}
 
-	// If kind is not AIRunKindRequiredAction, return the response
-	return response.Response, err
+	// If event is not AIRunKindRequiredAction, return the response
+	return responseCompleted.String(), err
 }
 
 func (uc *UseCase) performAction(ctx context.Context, run domain.Run) (string, error) {

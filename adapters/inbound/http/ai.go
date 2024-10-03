@@ -7,14 +7,14 @@ import (
 	"github.com/google/uuid"
 
 	"gitlab.com/EDteam/workshop-ai-2024/admin/domain"
-	"gitlab.com/EDteam/workshop-ai-2024/admin/ports"
+	"gitlab.com/EDteam/workshop-ai-2024/admin/ports/app"
 )
 
 type AIHandler struct {
-	useCase ports.AI
+	useCase app.AI
 }
 
-func NewAIHandler(useCase ports.AI) AIHandler {
+func NewAIHandler(useCase app.AI) AIHandler {
 	return AIHandler{useCase: useCase}
 }
 

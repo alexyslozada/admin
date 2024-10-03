@@ -12,6 +12,8 @@ import (
 )
 
 func main() {
+	// Config log to show the line of the log
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
 	err := godotenv.Load()
 	if err != nil {

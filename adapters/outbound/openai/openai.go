@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 
 	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/option"
@@ -51,10 +52,14 @@ func (o OpenAI) CreateMessage(ctx context.Context, threadID, content string) (st
 	return message.ID, err
 }
 
-func (o OpenAI) RunThread(ctx context.Context, threadID string) (domain.Run, error) {
-	stream := o.client.Beta.Threads.Runs.NewStreaming(ctx, threadID, openai.BetaThreadRunNewParams{
-		AssistantID: openai.String(o.assistantID),
-	})
+func (o OpenAI) RunThread(ctx context.Context, threadID string) (domain.AIRunKind, []domain.Run, error) {
+	stream := o.client.Beta.Threads.Runs.NewStreaming(
+		ctx,
+		threadID,
+		openai.BetaThreadRunNewParams{
+			AssistantID: openai.String(o.assistantID),
+		},
+	)
 
 	for stream.Next() {
 		streamEvent := stream.Current()
@@ -65,67 +70,70 @@ func (o OpenAI) RunThread(ctx context.Context, threadID string) (domain.Run, err
 		if streamEvent.Event == openai.AssistantStreamEventEventThreadMessageCompleted {
 			message, ok := streamEvent.Data.(openai.Message)
 			if !ok {
-				return domain.Run{}, fmt.Errorf("could not convert streamEvent.Data to openai.Message, type is: %T", streamEvent.Data)
+				return domain.AIRunKindResponse, nil, fmt.Errorf("could not convert streamEvent.Data to openai.Message, type is: %T", streamEvent.Data)
 			}
 
-			return domain.Run{
-				Kind:     domain.AIRunKindResponse,
-				Response: message.Content[0].Text.Value,
-			}, nil
+			responses := make([]domain.Run, 0, len(message.Content))
+			for _, content := range message.Content {
+				responses = append(responses, domain.Run{Response: content.Text.Value})
+			}
+
+			return domain.AIRunKindResponse, responses, nil
 		}
 
 		if streamEvent.Event == openai.AssistantStreamEventEventThreadRunRequiresAction {
 			run, ok := streamEvent.Data.(openai.Run)
 			if !ok {
-				return domain.Run{}, fmt.Errorf("could not convert streamEvent.Data to openai.Run, type is: %T", streamEvent.Data)
+				return domain.AIRunKindRequiredAction, nil, fmt.Errorf("could not convert streamEvent.Data to openai.Run, type is: %T", streamEvent.Data)
 			}
 
-			runID := run.ID
-			callID := run.RequiredAction.SubmitToolOutputs.ToolCalls[0].ID
-			function := run.RequiredAction.SubmitToolOutputs.ToolCalls[0].Function
+			runners := make([]domain.Run, 0, len(run.RequiredAction.SubmitToolOutputs.ToolCalls))
+			for _, toolCall := range run.RequiredAction.SubmitToolOutputs.ToolCalls {
+				function := toolCall.Function
 
-			var args map[string]any
-			err := json.Unmarshal([]byte(function.Arguments), &args)
-			if err != nil {
-				return domain.Run{}, err
+				var args map[string]any
+				err := json.Unmarshal([]byte(function.Arguments), &args)
+				if err != nil {
+					return domain.AIRunKindRequiredAction, nil, err
+				}
+				log.Printf("RunThread() args: %+v", args)
+
+				functionCall := domain.FunctionCall{
+					ThreadID: threadID,
+					RunID:    run.ID,
+					CallID:   toolCall.ID,
+					Name:     function.Name,
+					Args:     args,
+				}
+
+				runners = append(runners, domain.Run{FunctionCall: functionCall})
 			}
 
-			functionCall := domain.FunctionCall{
-				ThreadID: threadID,
-				RunID:    runID,
-				CallID:   callID,
-				Name:     function.Name,
-				Args:     args,
-			}
-
-			return domain.Run{
-				Kind:         domain.AIRunKindRequiredAction,
-				FunctionCall: functionCall,
-			}, nil
+			return domain.AIRunKindRequiredAction, runners, nil
 		}
 	}
 	if err := stream.Err(); err != nil {
-		return domain.Run{}, err
+		return domain.AIRunKindRunCompleted, nil, err
 	}
 
-	return domain.Run{}, nil
+	return domain.AIRunKindRunCompleted, nil, nil
 }
 
-func (o OpenAI) SubmitToolOutput(ctx context.Context, threadID, runID, callID, output string) (string, error) {
+func (o OpenAI) SubmitToolOutput(ctx context.Context, runners []domain.Run) (string, error) {
+	threadID := runners[0].FunctionCall.ThreadID
+	runID := runners[0].FunctionCall.RunID
+	outputParams := make([]openai.BetaThreadRunSubmitToolOutputsParamsToolOutput, 0, len(runners))
+	for _, runner := range runners {
+		outputParams = append(outputParams, openai.BetaThreadRunSubmitToolOutputsParamsToolOutput{
+			Output:     openai.F(runner.Response),
+			ToolCallID: openai.F(runner.FunctionCall.CallID),
+		})
+	}
 	stream := o.client.Beta.Threads.Runs.SubmitToolOutputsStreaming(
 		ctx,
 		threadID,
 		runID,
-		openai.BetaThreadRunSubmitToolOutputsParams{
-			ToolOutputs: openai.F(
-				[]openai.BetaThreadRunSubmitToolOutputsParamsToolOutput{
-					{
-						Output:     openai.F(output),
-						ToolCallID: openai.F(callID),
-					},
-				},
-			),
-		},
+		openai.BetaThreadRunSubmitToolOutputsParams{ToolOutputs: openai.F(outputParams)},
 	)
 
 	for stream.Next() {

@@ -8,7 +8,7 @@ import (
 
 	"gitlab.com/EDteam/workshop-ai-2024/admin/domain"
 	EDtimer "gitlab.com/EDteam/workshop-ai-2024/admin/internal/timer"
-	portUser "gitlab.com/EDteam/workshop-ai-2024/admin/ports"
+	portUser "gitlab.com/EDteam/workshop-ai-2024/admin/ports/app"
 )
 
 type UseCase struct {

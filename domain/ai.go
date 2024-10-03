@@ -8,6 +8,7 @@ type (
 const (
 	AIRunKindRequiredAction AIRunKind = "required_action"
 	AIRunKindResponse       AIRunKind = "response"
+	AIRunKindRunCompleted   AIRunKind = "run_completed"
 )
 
 const (
@@ -25,10 +26,10 @@ type FunctionCall struct {
 	CallID   string         `json:"call_id"`
 	Name     string         `json:"name"`
 	Args     map[string]any `json:"args"`
+	Response string         `json:"response"`
 }
 
 type Run struct {
-	Kind         AIRunKind    `json:"kind"`
 	Response     string       `json:"response"`
 	FunctionCall FunctionCall `json:"function_call"`
 }
