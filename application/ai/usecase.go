@@ -69,6 +69,10 @@ func (uc *UseCase) CreateMessage(ctx context.Context, threadID uuid.UUID, conten
 		return "", err
 	}
 
+	return uc.processResponse(ctx, runners, event)
+}
+
+func (uc *UseCase) processResponse(ctx context.Context, runners []domain.Run, event domain.AIRunKind) (string, error) {
 	var responseCompleted bytes.Buffer
 	for i, runner := range runners {
 		if event == domain.AIRunKindRequiredAction {
@@ -88,16 +92,19 @@ func (uc *UseCase) CreateMessage(ctx context.Context, threadID uuid.UUID, conten
 	}
 
 	if event == domain.AIRunKindRequiredAction {
-		toolResponse, err := uc.openAI.SubmitToolOutput(ctx, runners)
+		eventResponse, runnersResponse, err := uc.openAI.SubmitToolOutput(ctx, runners)
 		if err != nil {
 			return "", err
 		}
 
-		return toolResponse, nil
+		// Process the response recursively
+		// this is a recursive call to process the response because
+		// submitting the tool output may require another action
+		return uc.processResponse(ctx, runnersResponse, eventResponse)
 	}
 
 	// If event is not AIRunKindRequiredAction, return the response
-	return responseCompleted.String(), err
+	return responseCompleted.String(), nil
 }
 
 func (uc *UseCase) performAction(ctx context.Context, run domain.Run) (string, error) {

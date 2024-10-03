@@ -1,7 +1,6 @@
 package openai
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -125,7 +124,7 @@ func (o OpenAI) RunThread(ctx context.Context, threadID string) (domain.AIRunKin
 	return domain.AIRunKindRunCompleted, nil, nil
 }
 
-func (o OpenAI) SubmitToolOutput(ctx context.Context, runners []domain.Run) (string, error) {
+func (o OpenAI) SubmitToolOutput(ctx context.Context, runners []domain.Run) (domain.AIRunKind, []domain.Run, error) {
 	threadID := runners[0].FunctionCall.ThreadID
 	runID := runners[0].FunctionCall.RunID
 	outputParams := make([]openai.BetaThreadRunSubmitToolOutputsParamsToolOutput, 0, len(runners))
@@ -145,28 +144,61 @@ func (o OpenAI) SubmitToolOutput(ctx context.Context, runners []domain.Run) (str
 
 	for stream.Next() {
 		streamEvent := stream.Current()
-		log.Printf("SubmitToolOutput() streamEvent: %+v", streamEvent.Event)
 		if streamEvent.Event == openai.AssistantStreamEventEventThreadRunCompleted {
 			break
 		}
+
 		if streamEvent.Event == openai.AssistantStreamEventEventThreadMessageCompleted {
 			message, ok := streamEvent.Data.(openai.Message)
 			if !ok {
-				return "", fmt.Errorf("could not convert streamEvent.Data to openai.Message, type is: %T", streamEvent.Data)
+				return domain.AIRunKindResponse, nil, fmt.Errorf("could not convert streamEvent.Data to openai.Message, type is: %T", streamEvent.Data)
 			}
 
-			var messageResponse bytes.Buffer
+			responses := make([]domain.Run, 0, len(message.Content))
 			for _, content := range message.Content {
-				messageResponse.WriteString(content.Text.Value)
-				messageResponse.WriteString("\n")
+				responses = append(responses, domain.Run{Response: content.Text.Value})
 			}
 
-			return messageResponse.String(), nil
+			return domain.AIRunKindResponse, responses, nil
+		}
+
+		if streamEvent.Event == openai.AssistantStreamEventEventThreadRunRequiresAction {
+			log.Printf("SubmitToolOutput() threadID: %s, Required action", threadID)
+			run, ok := streamEvent.Data.(openai.Run)
+			if !ok {
+				return domain.AIRunKindRequiredAction, nil, fmt.Errorf("could not convert streamEvent.Data to openai.Run, type is: %T", streamEvent.Data)
+			}
+
+			runnersResponse := make([]domain.Run, 0, len(run.RequiredAction.SubmitToolOutputs.ToolCalls))
+			for _, toolCall := range run.RequiredAction.SubmitToolOutputs.ToolCalls {
+				log.Printf("RunThread() toolCall: %+v", toolCall)
+				function := toolCall.Function
+
+				var args map[string]any
+				err := json.Unmarshal([]byte(function.Arguments), &args)
+				if err != nil {
+					return domain.AIRunKindRequiredAction, nil, err
+				}
+				log.Printf("RunThread() args: %+v", args)
+
+				functionCall := domain.FunctionCall{
+					ThreadID: threadID,
+					RunID:    run.ID,
+					CallID:   toolCall.ID,
+					Name:     function.Name,
+					Args:     args,
+				}
+
+				runnersResponse = append(runnersResponse, domain.Run{FunctionCall: functionCall})
+			}
+
+			return domain.AIRunKindRequiredAction, runnersResponse, nil
 		}
 	}
 	if err := stream.Err(); err != nil {
-		return err.Error(), err
+		return domain.AIRunKindRunCompleted, nil, err
 	}
 
-	return "SubmitToolOutput finish. Data not found", nil
+	log.Printf("SubmitToolOutput() threadID: %s, tool output completed, but not data", threadID)
+	return domain.AIRunKindRunCompleted, nil, nil
 }
