@@ -87,6 +87,7 @@ func (uc *UseCase) CreateMessage(ctx context.Context, threadID uuid.UUID, conten
 
 func (uc *UseCase) getRunCompleted(ctx context.Context, threadID, runID string) error {
 	var status domain.AIRunKind
+	var requiredAction domain.AIRequiredAction
 	var runners []domain.Run
 	var err error
 
@@ -95,7 +96,7 @@ func (uc *UseCase) getRunCompleted(ctx context.Context, threadID, runID string) 
 	for range 50 {
 		time.Sleep(2 * time.Second)
 
-		status, runners, err = uc.openAI.GetRun(ctx, threadID, runID)
+		status, requiredAction, runners, err = uc.openAI.GetRun(ctx, threadID, runID)
 		if err != nil {
 			return err
 		}
@@ -104,7 +105,7 @@ func (uc *UseCase) getRunCompleted(ctx context.Context, threadID, runID string) 
 			return nil
 		}
 
-		if status == domain.AIRunKindRequiresAction {
+		if status == domain.AIRunKindRequiresAction && requiredAction == domain.AIRequiredActionSubmitToolOutputs {
 			for i, runner := range runners {
 				if runner.FunctionCall.Name == domain.AIFunctionNameGetSales {
 					// Perform the GetSales action
@@ -124,7 +125,7 @@ func (uc *UseCase) getRunCompleted(ctx context.Context, threadID, runID string) 
 			}
 		}
 
-		log.Printf("GetRunCompleted() status: %s", status)
+		log.Printf("GetRunCompleted() status: %s, requiredAction: %s", status, requiredAction)
 	}
 
 	log.Printf("GetRunCompleted() run did not complete")

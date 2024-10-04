@@ -69,12 +69,12 @@ func (o OpenAI) RunThread(ctx context.Context, threadID string) (string, error) 
 	return run.ID, nil
 }
 
-func (o OpenAI) GetRun(ctx context.Context, threadID, runID string) (domain.AIRunKind, []domain.Run, error) {
+func (o OpenAI) GetRun(ctx context.Context, threadID, runID string) (domain.AIRunKind, domain.AIRequiredAction, []domain.Run, error) {
 	log.Printf("GetRun() threadID: %s, runID: %s", threadID, runID)
 	run, err := o.client.Beta.Threads.Runs.Get(ctx, threadID, runID)
 	if err != nil {
 		log.Printf("GetRun() error: %v", err)
-		return "", nil, err
+		return "", "", nil, err
 	}
 
 	var runners []domain.Run
@@ -83,7 +83,7 @@ func (o OpenAI) GetRun(ctx context.Context, threadID, runID string) (domain.AIRu
 		err := json.Unmarshal([]byte(toolCall.Function.Arguments), &args)
 		if err != nil {
 			log.Printf("GetRun() error: %v", err)
-			return "", nil, err
+			return "", "", nil, err
 		}
 		log.Printf("GetRun() args: %+v", args)
 		runner := domain.Run{
@@ -96,7 +96,7 @@ func (o OpenAI) GetRun(ctx context.Context, threadID, runID string) (domain.AIRu
 		runners = append(runners, runner)
 	}
 
-	return domain.AIRunKind(run.Status), runners, nil
+	return domain.AIRunKind(run.Status), domain.AIRequiredAction(run.RequiredAction.Type), runners, nil
 }
 
 func (o OpenAI) GetMessagesFromRun(ctx context.Context, threadID, runID string) ([]string, error) {

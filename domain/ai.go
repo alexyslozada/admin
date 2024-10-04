@@ -1,14 +1,18 @@
 package domain
 
 type (
-	AIRunKind      string
-	AIFunctionName string
+	AIRunKind        string
+	AIRequiredAction string
+	AIFunctionName   string
 )
 
 const (
 	AIRunKindRequiresAction AIRunKind = "requires_action"
-	AIRunKindResponse       AIRunKind = "response"
 	AIRunKindRunCompleted   AIRunKind = "completed"
+)
+
+const (
+	AIRequiredActionSubmitToolOutputs AIRequiredAction = "submit_tool_outputs"
 )
 
 const (
