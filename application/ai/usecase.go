@@ -1,11 +1,12 @@
 package ai
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -13,15 +14,16 @@ import (
 	"gitlab.com/EDteam/workshop-ai-2024/admin/domain"
 	"gitlab.com/EDteam/workshop-ai-2024/admin/internal/urler"
 	"gitlab.com/EDteam/workshop-ai-2024/admin/ports/app"
+	"gitlab.com/EDteam/workshop-ai-2024/admin/ports/out"
 )
 
 type UseCase struct {
-	openAI       app.OpenAI
+	openAI       out.OpenAI
 	threads      map[uuid.UUID]string
 	salesUseCase app.GenericUseCase[domain.Sale]
 }
 
-func NewUseCase(openAI app.OpenAI, sales app.GenericUseCase[domain.Sale]) UseCase {
+func NewUseCase(openAI out.OpenAI, sales app.GenericUseCase[domain.Sale]) UseCase {
 	return UseCase{
 		openAI:       openAI,
 		threads:      make(map[uuid.UUID]string),
@@ -64,47 +66,69 @@ func (uc *UseCase) CreateMessage(ctx context.Context, threadID uuid.UUID, conten
 		return "", err
 	}
 
-	event, runners, err := uc.openAI.RunThread(ctx, realThreadID)
+	runID, err := uc.openAI.RunThread(ctx, realThreadID)
 	if err != nil {
 		return "", err
 	}
 
-	return uc.processResponse(ctx, runners, event)
+	err = uc.getRunCompleted(ctx, realThreadID, runID)
+	if err != nil {
+		return "", err
+	}
+
+	messages, err := uc.openAI.GetMessagesFromRun(ctx, realThreadID, runID)
+	if err != nil {
+		return "", err
+	}
+
+	response := strings.Join(messages, "\n")
+	return response, nil
 }
 
-func (uc *UseCase) processResponse(ctx context.Context, runners []domain.Run, event domain.AIRunKind) (string, error) {
-	var responseCompleted bytes.Buffer
-	for i, runner := range runners {
-		if event == domain.AIRunKindRequiredAction {
-			// Perform required action
-			actionResponse, err := uc.performAction(ctx, runner)
-			if err != nil {
-				return "", err
+func (uc *UseCase) getRunCompleted(ctx context.Context, threadID, runID string) error {
+	var status domain.AIRunKind
+	var runners []domain.Run
+	var err error
+
+	// Poll the OpenAI interface for the run status
+	// try 50 times with a 2-second delay between each attempt
+	for range 50 {
+		time.Sleep(2 * time.Second)
+
+		status, runners, err = uc.openAI.GetRun(ctx, threadID, runID)
+		if err != nil {
+			return err
+		}
+
+		if status == domain.AIRunKindRunCompleted {
+			return nil
+		}
+
+		if status == domain.AIRunKindRequiresAction {
+			for i, runner := range runners {
+				if runner.FunctionCall.Name == domain.AIFunctionNameGetSales {
+					// Perform the GetSales action
+					actionResponse, err := uc.performAction(ctx, runner)
+					if err != nil {
+						log.Printf("GetRunCompleted() performAction() error: %v", err)
+						return err
+					}
+
+					runners[i].Response = actionResponse
+				}
 			}
 
-			runners[i].Response = actionResponse
-			continue
+			err = uc.openAI.SubmitToolOutput(ctx, threadID, runID, runners)
+			if err != nil {
+				return err
+			}
 		}
 
-		// If event is not AIRunKindRequiredAction, set the response
-		responseCompleted.WriteString(runner.Response)
-		responseCompleted.WriteString("\n")
+		log.Printf("GetRunCompleted() status: %s", status)
 	}
 
-	if event == domain.AIRunKindRequiredAction {
-		eventResponse, runnersResponse, err := uc.openAI.SubmitToolOutput(ctx, runners)
-		if err != nil {
-			return "", err
-		}
-
-		// Process the response recursively
-		// this is a recursive call to process the response because
-		// submitting the tool output may require another action
-		return uc.processResponse(ctx, runnersResponse, eventResponse)
-	}
-
-	// If event is not AIRunKindRequiredAction, return the response
-	return responseCompleted.String(), nil
+	log.Printf("GetRunCompleted() run did not complete")
+	return errors.New("run did not complete")
 }
 
 func (uc *UseCase) performAction(ctx context.Context, run domain.Run) (string, error) {

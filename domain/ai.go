@@ -6,9 +6,9 @@ type (
 )
 
 const (
-	AIRunKindRequiredAction AIRunKind = "required_action"
+	AIRunKindRequiresAction AIRunKind = "requires_action"
 	AIRunKindResponse       AIRunKind = "response"
-	AIRunKindRunCompleted   AIRunKind = "run_completed"
+	AIRunKindRunCompleted   AIRunKind = "completed"
 )
 
 const (
@@ -21,10 +21,8 @@ type AIMessageRequest struct {
 }
 
 type FunctionCall struct {
-	ThreadID string         `json:"thread_id"`
-	RunID    string         `json:"run_id"`
 	CallID   string         `json:"call_id"`
-	Name     string         `json:"name"`
+	Name     AIFunctionName `json:"name"`
 	Args     map[string]any `json:"args"`
 	Response string         `json:"response"`
 }
