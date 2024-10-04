@@ -87,7 +87,6 @@ func (h SaleHandler) FindAll(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	time.Now().Unix()
 	// Marshal response
 	response, err := json.Marshal(salesDTO)
 	if err != nil {
