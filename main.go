@@ -14,6 +14,8 @@ import (
 func main() {
 	// Config log to show the line of the log
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
+	// Config log to standard output
+	log.SetOutput(os.Stdout)
 
 	err := godotenv.Load()
 	if err != nil {

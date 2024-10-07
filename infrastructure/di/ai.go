@@ -20,7 +20,7 @@ func InitAIUseCase() ai.UseCase {
 
 	adapterOpenAI := openai.NewOpenAI(apiKey, assistantID)
 
-	return ai.NewUseCase(adapterOpenAI, InitSaleUseCase())
+	return ai.NewUseCase(adapterOpenAI, InitSaleUseCase(), InitSaleSummarizedUseCase())
 }
 
 func InitAIHandler() http.AIHandler {

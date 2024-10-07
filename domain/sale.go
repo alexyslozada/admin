@@ -29,6 +29,23 @@ func (Sale) TableName() string {
 	return "sales"
 }
 
+type SaleSummarized struct {
+	Product  string  `json:"product"`
+	Amount   float64 `json:"amount"`
+	Year     int     `json:"year"`
+	Month    int     `json:"month"`
+	Quantity int     `json:"quantity"`
+}
+
+type SaleSummarizedByClient struct {
+	Name     string  `json:"name"`
+	Product  string  `json:"product"`
+	Amount   float64 `json:"amount"`
+	Year     int     `json:"year"`
+	Month    int     `json:"month"`
+	Quantity int     `json:"quantity"`
+}
+
 type SaleResponse struct {
 	ID             uuid.UUID `json:"id"`
 	Product        string    `json:"product"`

@@ -18,16 +18,18 @@ import (
 )
 
 type UseCase struct {
-	openAI       out.OpenAI
-	threads      map[uuid.UUID]string
-	salesUseCase app.GenericUseCase[domain.Sale]
+	openAI                 out.OpenAI
+	threads                map[uuid.UUID]string
+	salesUseCase           app.GenericUseCase[domain.Sale]
+	salesSummarizedUseCase app.GenericUseCase[domain.SaleSummarized]
 }
 
-func NewUseCase(openAI out.OpenAI, sales app.GenericUseCase[domain.Sale]) UseCase {
+func NewUseCase(openAI out.OpenAI, sales app.GenericUseCase[domain.Sale], salesSummarized app.GenericUseCase[domain.SaleSummarized]) UseCase {
 	return UseCase{
-		openAI:       openAI,
-		threads:      make(map[uuid.UUID]string),
-		salesUseCase: sales,
+		openAI:                 openAI,
+		threads:                make(map[uuid.UUID]string),
+		salesUseCase:           sales,
+		salesSummarizedUseCase: salesSummarized,
 	}
 }
 
@@ -111,7 +113,7 @@ func (uc *UseCase) getRunCompleted(ctx context.Context, threadID, runID string) 
 
 		if status == domain.AIRunKindRequiresAction && requiredAction == domain.AIRequiredActionSubmitToolOutputs {
 			for i, runner := range runners {
-				if runner.FunctionCall.Name == domain.AIFunctionNameGetSales {
+				if runner.FunctionCall.Name == domain.AIFunctionNameGetSales || runner.FunctionCall.Name == domain.AIFunctionNameGetSalesSummarized {
 					// Perform the GetSales action
 					actionResponse, err := uc.performAction(ctx, runner)
 					if err != nil {
@@ -120,6 +122,7 @@ func (uc *UseCase) getRunCompleted(ctx context.Context, threadID, runID string) 
 					}
 
 					runners[i].Response = actionResponse
+					continue
 				}
 			}
 
@@ -138,7 +141,7 @@ func (uc *UseCase) getRunCompleted(ctx context.Context, threadID, runID string) 
 
 func (uc *UseCase) performAction(ctx context.Context, run domain.Run) (string, error) {
 	// Perform the required action
-	if domain.AIFunctionName(run.FunctionCall.Name) == domain.AIFunctionNameGetSales {
+	if run.FunctionCall.Name == domain.AIFunctionNameGetSales {
 		from, ok := run.FunctionCall.Args["from"].(string)
 		if !ok {
 			return "", fmt.Errorf("could not convert 'from' argument to string")
@@ -192,6 +195,42 @@ func (uc *UseCase) performAction(ctx context.Context, run domain.Run) (string, e
 		}
 
 		raw, err := json.Marshal(salesDTO)
+		if err != nil {
+			return "", err
+		}
+
+		return string(raw), nil
+	}
+
+	if run.FunctionCall.Name == domain.AIFunctionNameGetSalesSummarized {
+		from, ok := run.FunctionCall.Args["from"].(string)
+		if !ok {
+			return "", fmt.Errorf("could not convert 'from' argument to string")
+		}
+		to, ok := run.FunctionCall.Args["to"].(string)
+		if !ok {
+			return "", fmt.Errorf("could not convert 'to' argument to string")
+		}
+		filter := []urler.Filter{
+			{
+				Field:    "from",
+				Operator: urler.Equal,
+				Value:    from,
+			},
+			{
+				Field:    "to",
+				Operator: urler.Equal,
+				Value:    to,
+			},
+		}
+
+		// Perform the GetSales action
+		sales, err := uc.salesSummarizedUseCase.FindAll(filter)
+		if err != nil {
+			return "", err
+		}
+
+		raw, err := json.Marshal(sales)
 		if err != nil {
 			return "", err
 		}

@@ -85,7 +85,7 @@ func (o OpenAI) GetRun(ctx context.Context, threadID, runID string) (domain.AIRu
 			log.Printf("GetRun() error: %v", err)
 			return "", "", nil, err
 		}
-		log.Printf("GetRun() args: %+v", args)
+		log.Printf("GetRun() function name: %s, args: %+v", toolCall.Function.Name, args)
 		runner := domain.Run{
 			FunctionCall: domain.FunctionCall{
 				CallID: toolCall.ID,

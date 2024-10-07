@@ -17,7 +17,8 @@ const (
 )
 
 const (
-	AIFunctionNameGetSales AIFunctionName = "GetSales"
+	AIFunctionNameGetSales           AIFunctionName = "GetSales"
+	AIFunctionNameGetSalesSummarized AIFunctionName = "GetSalesSummarized"
 )
 
 type AIMessageRequest struct {
