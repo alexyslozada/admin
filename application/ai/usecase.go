@@ -105,6 +105,10 @@ func (uc *UseCase) getRunCompleted(ctx context.Context, threadID, runID string) 
 			return nil
 		}
 
+		if status == domain.AIRunKindRunFailed {
+			return errors.New("run failed")
+		}
+
 		if status == domain.AIRunKindRequiresAction && requiredAction == domain.AIRequiredActionSubmitToolOutputs {
 			for i, runner := range runners {
 				if runner.FunctionCall.Name == domain.AIFunctionNameGetSales {

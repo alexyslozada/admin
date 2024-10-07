@@ -9,6 +9,7 @@ type (
 const (
 	AIRunKindRequiresAction AIRunKind = "requires_action"
 	AIRunKindRunCompleted   AIRunKind = "completed"
+	AIRunKindRunFailed      AIRunKind = "failed"
 )
 
 const (
